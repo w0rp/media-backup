@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# This script allows you to easily back up content you like online from
+# YouTube, SoundCloud, and on many other sites. All you need is a working Linux
+# machine with Python 3.5+ (for youtube-dl), ffmpeg, and an Internet
+# connection.
+
+# You need to list the files/channels you want in `in-download-list.cfg`.
+# Blank lines are allowed and lines can be commented with hashes (#)
+
+# Copyright (c) 2019 w0rp <devw0rp@gmail.com>
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Change to the directory for this script.
+cd "$(dirname "$(realpath "$0")")" || exit 1
+
+if ! [ -d ve ]; then
+    python3 -m venv ve
+fi
+
+ve/bin/pip install -q -U youtube-dl
+
+# Generate download.list from a configuration file with comments.
+sed '/^#\|^\s*$/d' in-download-list.cfg > download.list
+
+# -a <file> is list of things to grab.
+# For a list of users use 'ytuser:<usename>' for each line.
+
+# -f bestvideo+bestaudio/best gets you the best stuff. You need ffmpeg.
+
+# --download-archive <filename> names a file to save completed downloads in.
+# --write-info-json --write-thumbnail --add-metadata will preserve as much
+# information about a video as possible, except subtitles and comments.
+
+# the -o format specifies where to output files and with what names.
+
+ve/bin/youtube-dl \
+    -a ./download.list \
+    -f 'bestvideo[ext!=webm]+bestaudio[ext!=webm]/best[ext!=webm]' \
+    --no-warnings \
+    --ignore-errors \
+    --download-archive ./complete.list \
+    --write-info-json --write-thumbnail --add-metadata \
+    -o "./video/%(uploader)s/%(title)s {%(id)s}.%(ext)s" \
+    &> output.log || echo 'Something went wrong, check output.log' 1>&2
